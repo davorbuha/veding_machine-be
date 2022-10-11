@@ -36,6 +36,7 @@ func initRouter() *gin.Engine {
 		api.POST("/login", controllers.Login)
 		api.POST("/refresh-token", controllers.RefreshToken)
 		api.POST("/user/register", controllers.RegisterUser)
+		api.POST("/logout-all", controllers.LogoutAll)
 		secured := api.Group("/secured").Use(middlewares.Auth())
 		{
 			secured.GET("/ping", controllers.Ping)
@@ -43,6 +44,9 @@ func initRouter() *gin.Engine {
 			secured.PUT("/product", middlewares.RoleGuard(models.Seller), controllers.CreateProduct)
 			secured.DELETE("/product", middlewares.RoleGuard(models.Seller), controllers.DeleteProduct)
 			secured.POST("/product", middlewares.RoleGuard(models.Seller), controllers.UpdateProduct)
+			secured.POST("/deposit", middlewares.RoleGuard(models.Buyer), controllers.Deposit)
+			secured.POST("/reset-deposit", middlewares.RoleGuard(models.Buyer), controllers.ResetDeposit)
+			secured.POST("/buy", middlewares.RoleGuard(models.Buyer), controllers.Buy)
 		}
 		api.GET("/products", controllers.GetProducts)
 	}

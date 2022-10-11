@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
@@ -158,4 +159,8 @@ func ValidateRefreshToken(signedToken string) (user models.User, sessionUUID uui
 	sessionUUID = claims.Session
 
 	return
+}
+
+func GetToken(context *gin.Context) string {
+	return context.GetHeader("Authorization")
 }

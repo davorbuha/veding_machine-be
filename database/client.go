@@ -24,5 +24,6 @@ func Migrate() {
 	Instance.AutoMigrate(&models.User{})
 	Instance.AutoMigrate(&models.Session{})
 	Instance.AutoMigrate(&models.Product{})
+	Instance.AutoMigrate(&models.Balance{})
 	log.Println("Database Migration Completed!")
 }

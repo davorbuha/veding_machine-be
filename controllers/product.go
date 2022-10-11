@@ -13,6 +13,7 @@ import (
 )
 
 func CreateProduct(context *gin.Context) {
+	token := auth.GetToken(context)
 	product := models.Product{}
 	if err := context.ShouldBindJSON(&product); err != nil {
 		var ve validator.ValidationErrors
@@ -28,9 +29,14 @@ func CreateProduct(context *gin.Context) {
 		return
 	}
 
+	if product.Price%5 != 0 {
+		context.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "price not divisible by 5 or 10"})
+		return
+	}
+
 	product.ID = uuid.New()
 
-	claims, err := auth.GetClaimsFromToken(context.GetHeader("Authorization"))
+	claims, err := auth.GetClaimsFromToken(token)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		context.Abort()
@@ -47,10 +53,10 @@ func CreateProduct(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"product_id": product.ID})
-	return
 }
 
 func UpdateProduct(context *gin.Context) {
+	token := auth.GetToken(context)
 	product := models.Product{}
 	if err := context.ShouldBindJSON(&product); err != nil {
 		var ve validator.ValidationErrors
@@ -72,7 +78,7 @@ func UpdateProduct(context *gin.Context) {
 		return
 	}
 
-	claims, err := auth.GetClaimsFromToken(context.GetHeader("Authorization"))
+	claims, err := auth.GetClaimsFromToken(token)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		context.Abort()
@@ -84,6 +90,7 @@ func UpdateProduct(context *gin.Context) {
 	record := database.Instance.Where("id = ? AND seller_id = ?", product.ID, product.SellerID).Update("available", product.Available).Update("price", product.Price).Update("name", product.Name)
 	if record.RowsAffected == 0 {
 		context.JSON(http.StatusForbidden, gin.H{"error": "you dont have permissions to update this product"})
+		return
 	}
 	if record.Error != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": record.Error.Error()})
@@ -91,7 +98,6 @@ func UpdateProduct(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"product_id": product.ID})
-	return
 }
 
 type DeleteProductRequest struct {
@@ -99,6 +105,7 @@ type DeleteProductRequest struct {
 }
 
 func DeleteProduct(context *gin.Context) {
+	token := auth.GetToken(context)
 	rq := DeleteProductRequest{}
 	err := context.ShouldBindJSON(&rq)
 
@@ -107,7 +114,7 @@ func DeleteProduct(context *gin.Context) {
 		return
 	}
 
-	claims, err := auth.GetClaimsFromToken(context.GetHeader("Authorization"))
+	claims, err := auth.GetClaimsFromToken(token)
 	if err != nil {
 		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -116,6 +123,7 @@ func DeleteProduct(context *gin.Context) {
 	record := database.Instance.Where("id = ? AND seller_id = ?", rq.ID, claims.UserID).Delete(&models.Product{})
 	if record.RowsAffected == 0 {
 		context.JSON(http.StatusForbidden, gin.H{"error": "you dont have permissions to delete this product"})
+		return
 	}
 	if record.Error != nil {
 		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": record.Error.Error()})
@@ -123,7 +131,6 @@ func DeleteProduct(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, gin.H{"product_id": rq.ID})
-	return
 }
 
 func GetProducts(context *gin.Context) {
@@ -134,5 +141,4 @@ func GetProducts(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"products": products})
-	return
 }

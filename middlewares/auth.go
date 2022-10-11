@@ -9,7 +9,7 @@ import (
 
 func Auth() gin.HandlerFunc {
 	return func(context *gin.Context) {
-		tokenString := context.GetHeader("Authorization")
+		tokenString := auth.GetToken(context)
 		if tokenString == "" {
 			context.JSON(401, gin.H{"error": "request does not contain an access token"})
 			context.Abort()
@@ -27,7 +27,7 @@ func Auth() gin.HandlerFunc {
 
 func RoleGuard(role int) gin.HandlerFunc {
 	return func(context *gin.Context) {
-		tokenString := context.GetHeader("Authorization")
+		tokenString := auth.GetToken(context)
 		err := auth.ValidateAccessToken(tokenString)
 		if err != nil {
 			context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
